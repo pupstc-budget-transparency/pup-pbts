@@ -5,6 +5,8 @@ require '../includes/config.php';
 
 $role = $_SESSION['role'];
 
+
+
 $search = '';
 
 if (isset($_GET['search'])) {
@@ -16,9 +18,7 @@ if (isset($_GET['search'])) {
 
 $limit = 10;
 
-$page = isset($_GET['page'])
-    ? (int) $_GET['page']
-    : 1;
+$page = max(1, (int) ($_GET['page'] ?? 1));
 
 $offset = ($page - 1) * $limit;
 
@@ -35,7 +35,7 @@ $count_query = mysqli_query($conn, $count_sql);
 
 $total_records = mysqli_fetch_assoc($count_query)['total'];
 
-$total_pages = ceil($total_records / $limit);
+$total_pages = max(1, ceil($total_records / $limit));
 
 $sql = "
     SELECT *
@@ -67,6 +67,24 @@ $query = mysqli_query($conn, $sql);
 <style>
     body {
         background: #f5f7fb;
+    }
+
+    .sidebar-logo {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+
+    .sidebar-title {
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .sidebar-subtitle {
+        font-size: 10px;
+        line-height: 1.2;
+        color: rgba(255, 255, 255, .9);
     }
 
     .sidebar-btn {
@@ -123,10 +141,170 @@ $query = mysqli_query($conn, $sql);
     }
 
     .sidebar {
+        position: sticky;
+        top: 52px;
+        left: 0;
+
         width: 200px;
-        height: 100vh;
+        height: calc(100vh - 52px);
+
+        overflow-y: auto;
+        overflow-x: hidden;
+
         background: linear-gradient(180deg, #6b0000, #3d0000);
-        overflow: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .sidebar {
+        overflow-y: hidden;
+    }
+
+    .sidebar:hover {
+        overflow-y: auto;
+    }
+
+    .sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+
+    @media (max-width: 1199.98px) {
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -220px;
+            height: 100vh;
+            width: 200px;
+            z-index: 1045;
+            transition: left .3s ease;
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .4);
+            z-index: 1044;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .page-header-row {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 15px;
+        }
+
+        .role-access-card {
+            flex-direction: column;
+            gap: 15px;
+            padding: 16px;
+            width: 100%;
+        }
+
+        .divider {
+            width: 80%;
+            height: 1px;
+        }
+
+        .role-value,
+        .access-value {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .header-system-name {
+            display: none;
+        }
+
+        .pagination-wrap {
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+        }
+
+        .pagination {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .expenditure-search-form {
+            flex-direction: column !important;
+            width: 100%;
+        }
+
+        .expenditure-search-form input,
+        .expenditure-search-form button,
+        .expenditure-search-form a {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+
+        .users-table thead {
+            display: none;
+        }
+
+        .users-table,
+        .users-table tbody,
+        .users-table tr,
+        .users-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .users-table tr {
+            background: white;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+            border: none;
+        }
+
+        .users-table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            padding: 10px 5px;
+            border: none !important;
+            border-bottom: 1px solid #eee !important;
+        }
+
+        .users-table td:last-child {
+            border-bottom: none !important;
+        }
+
+        .users-table td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: rgb(134, 9, 9);
+            text-align: left;
+        }
+
+        .users-table td[data-label="Actions"] {
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .users-table td[data-label="Actions"]::before {
+            display: none;
+        }
     }
 
     .page-card {
@@ -277,6 +455,21 @@ $query = mysqli_query($conn, $sql);
     .pup-header th {
         background-color: rgb(134, 9, 9) !important;
         color: white !important;
+        border-right: 1px solid grey !important;
+        border-bottom: 1px solid grey !important;
+    }
+
+    .users-table tbody td {
+        border-right: 1px solid #dee2e6 !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+
+    .users-table tbody td:last-child {
+        border-right: none !important;
+    }
+
+    .pup-header th:last-child {
+        border-right: none !important;
     }
 
 
@@ -288,21 +481,13 @@ $query = mysqli_query($conn, $sql);
     }
 
     .role-access-card {
-
         background: #fff;
-
         border-radius: 18px;
-
         padding: 22px 30px;
-
         display: flex;
-
         align-items: center;
-
         justify-content: center;
-
         gap: 35px;
-
         box-shadow:
             0 8px 25px rgba(0, 0, 0, .06);
 
@@ -310,87 +495,71 @@ $query = mysqli_query($conn, $sql);
     }
 
     .role-box {
-
-        display: flex;
-
-        align-items: center;
-
+        display: flex align-items: center;
         gap: 15px;
     }
 
     .icon-circle {
-
         width: 55px;
-
         height: 55px;
-
         border-radius: 50%;
-
         display: flex;
-
         align-items: center;
-
         justify-content: center;
-
         font-size: 22px;
     }
 
     .role-icon {
-
         background: #fff2f2;
-
         color: #8B0000;
     }
 
     .access-icon {
-
         background: #edf9f1;
-
         color: #198754;
     }
 
     .label-text {
-
         color: #777;
-
         font-size: 13px;
     }
 
     .role-value {
-
         font-size: 22px;
-
         font-weight: 700;
-
         color: #8B0000;
     }
 
     .access-value {
-
         font-size: 22px;
-
         font-weight: 700;
-
         color: #198754;
     }
 
     .divider {
-
         width: 1px;
-
         height: 55px;
-
         background: #e5e5e5;
     }
 </style>
 
 <body>
 
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <div class="container-fluid text-white shadow-sm sticky-top" style="background-color: rgb(134,9,9);">
-        <div class="container-xl py-3 d-flex justify-content-between">
-            <h6 class="mb-0">
-                PUPSTC Participatory Budget Transparency System
-            </h6>
+        <div class="container-xl py-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm text-white d-xl-none border-0 p-0 me-2" onclick="toggleSidebar()"
+                    style="font-size:22px; line-height:1;">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <h6 class="mb-0 header-system-name">
+                    PUPSTC Participatory Budget Transparency System
+                </h6>
+                <h6 class="mb-0 d-sm-none">PUPSTC</h6>
+            </div>
             <span>
                 <strong><?php echo $_SESSION['fullname']; ?></strong>
             </span>
@@ -399,57 +568,72 @@ $query = mysqli_query($conn, $sql);
     <div class="container-fluid px-0">
         <div class="row g-0">
             <div class="col-12 col-xl-2">
-                <div class="sidebar d-flex flex-column gap-3 p-3 pt-5 position-sticky" style=" top: 0; height: 100vh;">
-                
-                        <a href="dashboard.php" class="sidebar-btn ">
-                            <i class="bi bi-speedometer2"></i>
-                            <span>Dashboard</span>
-                        </a>
+                <div class="sidebar d-flex flex-column gap-3 p-3 pt-5" id="mainSidebar">
 
-                        <a href="budget-management.php" class="sidebar-btn">
-                            <i class="bi bi-wallet2"></i>
-                            <span>Budget</span>
-                        </a>
+                    <div class="sidebar-header text-white mb-3">
+                        <div class="d-flex align-items-center">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Polytechnic_University_of_the_Philippines.svg/960px-Polytechnic_University_of_the_Philippines.svg.png"
+                                alt="PUP Logo" class="sidebar-logo">
+                            <div class="ms-2">
+                                <div class="sidebar-title">PUPSTC</div>
 
-                        <a href="expenditures.php" class="sidebar-btn">
-                            <i class="bi bi-wallet2"></i>
-                            <span>Expenditures</span>
-                        </a>
-                        <a href="projects.php" class="sidebar-btn">
-                            <i class="bi bi-kanban"></i>
-                            <span>Projects</span>
-                        </a>
+                                <div class="sidebar-subtitle">
+                                    Participatory Budget<br>
+                                    Transparency System
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="sidebar-divider">
+                    </div>
+                    <a href="dashboard.php" class="sidebar-btn ">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
 
-                        <a href="reports.php" class="sidebar-btn">
-                            <i class="bi bi-file-earmark-bar-graph"></i>
-                            <span>Reports</span>
-                        </a>
-                        <a href="feedback-management.php" class="sidebar-btn">
-                            <i class="bi bi-envelope-paper"></i>
-                            <span>Feedback</span>
-                        </a>
-                        <a href="voting-management.php" class="sidebar-btn">
-                            <i class="bi bi-hand-index-thumb"></i>
-                            <span> Voting</span>
-                        </a>
+                    <a href="budget-management.php" class="sidebar-btn">
+                        <i class="bi bi-wallet2"></i>
+                        <span>Budget</span>
+                    </a>
 
-                        <a href="users.php" class="sidebar-btn active">
-                            <i class="bi bi-person-lines-fill"></i>
-                            <span> Users</span>
-                        </a>
+                    <a href="expenditures.php" class="sidebar-btn">
+                        <i class="bi bi-wallet2"></i>
+                        <span>Expenditures</span>
+                    </a>
+                    <a href="projects.php" class="sidebar-btn">
+                        <i class="bi bi-kanban"></i>
+                        <span>Projects</span>
+                    </a>
 
-                        <a href="audit-logs.php" class="sidebar-btn">
-                            <i class="bi bi-clock-history"></i>
-                            <span>Audit Logs</span>
-                        </a>
+                    <a href="reports.php" class="sidebar-btn">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>Reports</span>
+                    </a>
+                    <a href="feedback-management.php" class="sidebar-btn">
+                        <i class="bi bi-envelope-paper"></i>
+                        <span>Feedback</span>
+                    </a>
+                    <a href="voting-management.php" class="sidebar-btn">
+                        <i class="bi bi-hand-index-thumb"></i>
+                        <span> Voting</span>
+                    </a>
 
-                        <a href="announcements.php" class="sidebar-btn">
-                            <i class="bi bi-megaphone-fill"></i>
-                            <span>Announcements</span>
-                        </a>
-              
+                    <a href="users.php" class="sidebar-btn active">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span> Users</span>
+                    </a>
+
+                    <a href="audit-logs.php" class="sidebar-btn">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Audit Logs</span>
+                    </a>
+
+                    <a href="announcements.php" class="sidebar-btn">
+                        <i class="bi bi-megaphone-fill"></i>
+                        <span>Announcements</span>
+                    </a>
+
+                    <hr class="sidebar-divider">
                     <div class="mt-auto">
-
                         <a href="../logout.php" class="btn w-100 rounded-pill text-white"
                             style="background:rgba(255,255,255,.15);">
 
@@ -464,11 +648,9 @@ $query = mysqli_query($conn, $sql);
                 <div class="row g-0">
                     <div class="col-12 col-xl-12 p-2 mt-3 ">
                         <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4 me-3 page-header-row">
 
                                 <div>
-
-
                                     <h2 class="fw-bold">
                                         <?php echo $_SESSION['fullname']; ?>
 
@@ -497,19 +679,14 @@ $query = mysqli_query($conn, $sql);
                                     </div>
 
                                     <div class="divider"></div>
-
                                     <div class="role-box">
-
                                         <div class="icon-circle access-icon">
                                             <i class="bi bi-shield-check"></i>
                                         </div>
-
                                         <div>
-
                                             <small class="label-text">
                                                 Access Level
                                             </small>
-
                                             <div class="access-value">
 
                                                 <?php
@@ -534,339 +711,331 @@ $query = mysqli_query($conn, $sql);
                         </div>
                     </div>
 
-                    <div class="col-12 col-xl-3 p-2">
-                        <div class="card stats-card shadow border border-gray">
-                            <div class="card-body d-flex align-items-center">
-
-
-                                <div class="me-3">
-                                    <div class="rounded-circle bg-danger-subtle p-3">
-                                        <i class="bi bi-people text-danger fs-4"></i>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <small class="text-muted">Total Users</small>
-                                    <h3 class="mb-0">
-                                        <?= mysqli_num_rows($query); ?>
-                                    </h3>
-                                    <small class="text-muted">
-                                        All registered users
-                                    </small>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-xl-3 p-2">
-                        <div class="card stats-card shadow border border-gray">
-                            <div class="card-body d-flex align-items-center">
-
-                                <div class="me-3">
-                                    <div class="rounded-circle bg-success-subtle p-3">
-                                        <i class="bi bi-check-circle text-success fs-4"></i>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <small class="text-muted">Active Users</small>
-                                    <h3 class="mb-0">
-                                        <?php
-                                        $active = mysqli_query(
-                                            $conn,
-                                            "SELECT COUNT(*) total
-                                                 FROM users
-                                                 WHERE status='active'"
-                                        );
-                                        echo mysqli_fetch_assoc($active)['total'];
-                                        ?>
-                                    </h3>
-                                    <small class="text-muted">
-                                        Currently active
-                                    </small>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <div class="col-12 col-xl-3 p-2">
-                        <div class="card stats-card shadow border border-gray">
-                            <div class="card-body d-flex align-items-center">
-
-                                <div class="me-3">
-                                    <div class="rounded-circle bg-warning-subtle p-3">
-                                        <i class="bi bi-mortarboard text-warning fs-4"></i>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <small class="text-muted">Students</small>
-                                    <h3 class="mb-0">
-                                        <?php
-                                        $students = mysqli_query(
-                                            $conn,
-                                            "SELECT COUNT(*) total
-                             FROM users
-                             WHERE role='student'"
-                                        );
-                                        echo mysqli_fetch_assoc($students)['total'];
-                                        ?>
-                                    </h3>
-                                    <small class="text-muted">
-                                        Student accounts
-                                    </small>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-xl-3 p-2">
-                        <div class="card stats-card shadow border border-gray">
-                            <div class="card-body d-flex align-items-center">
-
-                                <div class="me-3">
-                                    <div class="rounded-circle bg-primary-subtle p-3">
-                                        <i class="bi bi-shield-check text-primary fs-4"></i>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <small class="text-muted">Administrators</small>
-                                    <h3 class="mb-0">
-                                        <?php
-                                        $admins = mysqli_query(
-                                            $conn,
-                                            "SELECT COUNT(*) total
-                                                FROM users
-                                                WHERE role='super_admin'"
-                                        );
-                                        echo mysqli_fetch_assoc($admins)['total'];
-                                        ?>
-                                    </h3>
-                                    <small class="text-muted">
-                                        Admin accounts
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="row g-0">
-                    <div class="col-12 col-xl-6 p-2 mt-3">
-                        <div class="d-flex justify-content-start ">
-                            <a href="add-user.php" class="btn text-light px-4 py-2 shadow border border-gray"
-                                style="background-color: rgb(134,9,9);font-size:16px; font-weight:600; border-radius:10px;">
-
-                                <i class="bi bi-plus-lg"></i>
-                                Add User
-
-                            </a>
-
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-xl-6 p-2 mt-3">
-                        <div class="d-flex justify-content-between align-items-center  ">
-                            <div class="text-muted">
-                                Showing
-                                <?= mysqli_num_rows($query); ?>
-                                users
-                            </div>
-                            <form method="GET" class="d-flex gap-2">
-
-                                <input type="text" name="search" class="form-control" placeholder="Search users..."
-                                    value="<?= htmlspecialchars($search) ?>" style="width:250px;">
-
-                                <button type="submit" class="btn text-light" style="background-color: rgb(134,9,9);">
-
-                                    <i class="bi bi-search"></i>
-                                    Search
-
-                                </button>
-                                <a href="users.php" class="btn btn-secondary">
-                                    Clear
-                                </a>
-                            </form>
-
-
-                        </div>
-                    </div>
 
                     <div class="row g-0">
-                        <div class="col-12 col-xl-12 p-2">
-                            <div class="d-flex justify-content-between mb-3">
-                                <div class="flex-grow-1">
-                                    <div class="card page-card shadow border border-gray">
+                        <div class="col-12 col-xl-6 p-2 mt-3">
+                            <div class="d-flex justify-content-start ">
+                                <a href="add-user.php" class="btn text-light px-4 py-2 shadow border border-gray"
+                                    style="background-color: rgb(134,9,9);font-size:16px; font-weight:600; border-radius:10px;">
 
-                                        <div class="card-body">
-                                            <div class="table-responsive ">
-                                                <table
-                                                    class="table users-table align-middle  table-bordered table-striped ">
+                                    <i class="bi bi-plus-lg"></i>
+                                    Add User
 
-                                                    <thead class="pup-header">
-                                                        <tr>
-                                                            <th>ID</th>
-                                                            <th>Full Name</th>
-                                                            <th>Email</th>
-                                                            <th>Role</th>
-                                                            <th>Status</th>
-                                                            <th width="150">Action</th>
-                                                        </tr>
-                                                    </thead>
+                                </a>
 
-                                                    <tbody>
+                            </div>
+                        </div>
 
-                                                        <?php mysqli_data_seek($query, 0); ?>
+                        <div class="col-12 col-xl-6 p-2 mt-3">
+                            <div class="d-flex justify-content-between align-items-center me-3">
+                                <div class="text-muted">
+                                    Showing
+                                    <?= mysqli_num_rows($query); ?>
+                                    users
+                                </div>
+                                <form method="GET" class="d-flex gap-2">
 
-                                                        <?php while ($row = mysqli_fetch_assoc($query)) { ?>
+                                    <input type="text" name="search" class="form-control" placeholder="Search users..."
+                                        value="<?= htmlspecialchars($search) ?>" style="width:250px;">
 
+                                    <button type="submit" class="btn text-light"
+                                        style="background-color: rgb(134,9,9);">
+
+                                        <i class="bi bi-search"></i>
+                                        Search
+
+                                    </button>
+                                    <a href="users.php" class="btn btn-secondary">
+                                        Clear
+                                    </a>
+                                </form>
+
+
+                            </div>
+                        </div>
+
+                        <div class="row g-0">
+                            <div class="col-12 col-xl-12 p-2">
+                                <div class="d-flex justify-content-between mb-3 me-3">
+                                    <div class="flex-grow-1">
+                                        <div class="card page-card shadow border border-gray">
+
+                                            <div class="card-body">
+                                                <div class="table-responsive ">
+                                                    <table class="table users-table align-middle table-striped ">
+
+                                                        <thead class="pup-header text-center">
                                                             <tr>
-                                                                <td>
-                                                                    #<?= $row['user_id']; ?>
-                                                                </td>
-
-                                                                <td>
-                                                                    <strong><?= $row['fullname']; ?></strong>
-                                                                </td>
-
-                                                                <td>
-                                                                    <?= $row['email']; ?>
-                                                                </td>
-
-                                                                <td>
-                                                                    <?php
-                                                                    $roleClass = '';
-
-                                                                    switch ($row['role']) {
-
-                                                                        case 'super_admin':
-                                                                            $roleClass = 'role-admin';
-                                                                            break;
-
-                                                                        case 'student':
-                                                                            $roleClass = 'role-student';
-                                                                            break;
-
-                                                                        case 'student_affairs':
-                                                                            $roleClass = 'role-affairs';
-                                                                            break;
-
-                                                                        case 'budget_officer':
-                                                                            $roleClass = 'role-budget';
-                                                                            break;
-
-                                                                        case 'project_coordinator':
-                                                                            $roleClass = 'role-project';
-                                                                            break;
-                                                                    }
-                                                                    ?>
-
-                                                                    <span class="role-badge <?= $roleClass ?>">
-                                                                        <?= ucfirst(str_replace('_', ' ', $row['role'])) ?>
-                                                                    </span>
-                                                                </td>
-
-                                                                <td>
-                                                                    <span class="status-active">
-                                                                        ● <?= ucfirst($row['status']) ?>
-                                                                    </span>
-                                                                </td>
-
-                                                                <td>
-                                                                    <a href="edit-user.php?id=<?= $row['user_id']; ?>"
-                                                                        class="btn action-btn text-dark"
-                                                                        style="background-color: #FFC72C;">
-                                                                        <i class="bi bi-pencil"></i>
-
-                                                                    </a>
-
-                                                                    <a href="delete-user.php?id=<?= $row['user_id']; ?>"
-                                                                        class="btn action-btn text-light"
-                                                                        style="background-color: rgb(134,9,9);">
-                                                                        <i class="bi bi-trash"></i>
-
-                                                                    </a>
-                                                                </td>
+                                                                <th>ID</th>
+                                                                <th>Full Name</th>
+                                                                <th>Email</th>
+                                                                <th>Role</th>
+                                                                <th>Status</th>
+                                                                <th width="150">Action</th>
                                                             </tr>
+                                                        </thead>
 
-                                                        <?php } ?>
+                                                        <tbody>
 
-                                                    </tbody>
-                                                </table>
-                                                <div class="d-flex justify-content-between align-items-center mt-4">
+                                                            <?php mysqli_data_seek($query, 0); ?>
 
-                                                    <small class="text-muted">
+                                                            <?php while ($row = mysqli_fetch_assoc($query)) { ?>
 
-                                                        Showing
-                                                        <?= $offset + 1 ?>
-                                                        to
-                                                        <?= min($offset + $limit, $total_records) ?>
-                                                        of
-                                                        <?= $total_records ?>
-                                                        entries
+                                                                <tr>
+                                                                    <td data-label="ID">
+                                                                        #<?= $row['user_id']; ?>
+                                                                    </td>
 
-                                                    </small>
+                                                                    <td data-label="Full Name">
+                                                                        <strong><?= $row['fullname']; ?></strong>
+                                                                    </td>
 
-                                                    <nav>
-                                                        <ul class="pagination mb-0">
+                                                                    <td data-label="Email">
+                                                                        <?= $row['email']; ?>
+                                                                    </td>
 
-                                                            <!-- Previous -->
+                                                                    <td data-label="Role">
+                                                                        <?php
+                                                                        $roleClass = '';
 
-                                                            <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                                                                <a class="page-link" href="?page=<?= $page - 1 ?>">
+                                                                        switch ($row['role']) {
 
-                                                                    &laquo;
+                                                                            case 'super_admin':
+                                                                                $roleClass = 'role-admin';
+                                                                                break;
 
-                                                                </a>
-                                                            </li>
+                                                                            case 'student':
+                                                                                $roleClass = 'role-student';
+                                                                                break;
 
-                                                            <!-- Page Numbers -->
+                                                                            case 'student_affairs':
+                                                                                $roleClass = 'role-affairs';
+                                                                                break;
 
-                                                            <?php
-                                                            for (
-                                                                $i = 1;
-                                                                $i <= $total_pages;
-                                                                $i++
-                                                            ) {
-                                                                ?>
+                                                                            case 'budget_officer':
+                                                                                $roleClass = 'role-budget';
+                                                                                break;
 
-                                                                <li class="page-item <?= ($page == $i) ? 'active' : '' ?>">
+                                                                            case 'project_coordinator':
+                                                                                $roleClass = 'role-project';
+                                                                                break;
+                                                                        }
+                                                                        ?>
 
-                                                                    <a class="page-link" href="?page=<?= $i ?>">
+                                                                        <span class="role-badge <?= $roleClass ?>">
+                                                                            <?= ucfirst(str_replace('_', ' ', $row['role'])) ?>
+                                                                        </span>
+                                                                    </td>
 
-                                                                        <?= $i ?>
+                                                                    <td data-label="Status">
+                                                                        <span class="status-active">
+                                                                            ● <?= ucfirst($row['status']) ?>
+                                                                        </span>
+                                                                    </td>
 
-                                                                    </a>
+                                                                    <td data-label="Actions">
+                                                                        <a href="edit-user.php?id=<?= $row['user_id']; ?>"
+                                                                            class="btn action-btn text-dark"
+                                                                            style="background-color: #FFC72C;">
+                                                                            <i class="bi bi-pencil"></i>
 
-                                                                </li>
+                                                                        </a>
+
+                                                                        <a href="delete-user.php?id=<?= $row['user_id']; ?>"
+                                                                            class="btn action-btn text-light"
+                                                                            style="background-color: rgb(134,9,9);">
+                                                                            <i class="bi bi-trash"></i>
+
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
 
                                                             <?php } ?>
 
-                                                            <!-- Next -->
+                                                        </tbody>
+                                                    </table>
+                                                    <div class="d-flex justify-content-between align-items-center mt-5 pagination-wrap">
 
-                                                            <li
-                                                                class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
+                                                        <small class="text-muted">
 
-                                                                <a class="page-link" href="?page=<?= $page + 1 ?>">
+                                                            Showing
+                                                            <?= $offset + 1 ?>
+                                                            to
+                                                            <?= min($offset + $limit, $total_records) ?>
+                                                            of
+                                                            <?= $total_records ?>
+                                                            entries
 
-                                                                    &raquo;
+                                                        </small>
 
-                                                                </a>
-                                                            </li>
-                                                        </ul>
-                                                    </nav>
+                                                        <nav>
+                                                            <ul class="pagination mb-0">
+
+                                                                <!-- Previous Button -->
+                                                                <li
+                                                                    class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                                                                    <?php if ($page > 1) { ?>
+                                                                        <a class="page-link" href="?page=<?= $page - 1 ?>">
+                                                                            &laquo;
+                                                                        </a>
+                                                                    <?php } else { ?>
+                                                                        <span class="page-link">&laquo;</span>
+                                                                    <?php } ?>
+                                                                </li>
+
+                                                                <!-- Page Numbers -->
+                                                                <?php for ($i = 1; $i <= $total_pages; $i++) { ?>
+                                                                    <li
+                                                                        class="page-item <?= ($page == $i) ? 'active' : '' ?>">
+                                                                        <a class="page-link" href="?page=<?= $i ?>">
+                                                                            <?= $i ?>
+                                                                        </a>
+                                                                    </li>
+                                                                <?php } ?>
+
+                                                                <!-- Next Button -->
+                                                                <li
+                                                                    class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
+                                                                    <?php if ($page < $total_pages) { ?>
+                                                                        <a class="page-link" href="?page=<?= $page + 1 ?>">
+                                                                            &raquo;
+                                                                        </a>
+                                                                    <?php } else { ?>
+                                                                        <span class="page-link">&raquo;</span>
+                                                                    <?php } ?>
+                                                                </li>
+
+                                                            </ul>
+                                                        </nav>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-12 col-xl-3 p-2 mb-3">
+                                <div class="card stats-card shadow border border-gray">
+                                    <div class="card-body d-flex align-items-center">
+
+
+                                        <div class="me-3">
+                                            <div class="rounded-circle bg-danger-subtle p-3">
+                                                <i class="bi bi-people text-danger fs-4"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <small class="text-muted">Total Users</small>
+                                            <h3 class="mb-0">
+                                                <?= mysqli_num_rows($query); ?>
+                                            </h3>
+                                            <small class="text-muted">
+                                                All registered users
+                                            </small>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-xl-3 p-2 mb-3">
+                                <div class="card stats-card shadow border border-gray">
+                                    <div class="card-body d-flex align-items-center">
+
+                                        <div class="me-3">
+                                            <div class="rounded-circle bg-success-subtle p-3">
+                                                <i class="bi bi-check-circle text-success fs-4"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <small class="text-muted">Active Users</small>
+                                            <h3 class="mb-0">
+                                                <?php
+                                                $active = mysqli_query(
+                                                    $conn,
+                                                    "SELECT COUNT(*) total
+                                                 FROM users
+                                                 WHERE status='active'"
+                                                );
+                                                echo mysqli_fetch_assoc($active)['total'];
+                                                ?>
+                                            </h3>
+                                            <small class="text-muted">
+                                                Currently active
+                                            </small>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="col-12 col-xl-3 p-2 mb-3">
+                                <div class="card stats-card shadow border border-gray">
+                                    <div class="card-body d-flex align-items-center">
+
+                                        <div class="me-3">
+                                            <div class="rounded-circle bg-warning-subtle p-3">
+                                                <i class="bi bi-mortarboard text-warning fs-4"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <small class="text-muted">Students</small>
+                                            <h3 class="mb-0">
+                                                <?php
+                                                $students = mysqli_query(
+                                                    $conn,
+                                                    "SELECT COUNT(*) total
+                             FROM users
+                             WHERE role='student'"
+                                                );
+                                                echo mysqli_fetch_assoc($students)['total'];
+                                                ?>
+                                            </h3>
+                                            <small class="text-muted">
+                                                Student accounts
+                                            </small>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-3 p-2 mb-3">
+                                <div class="card stats-card shadow border border-gray">
+                                    <div class="card-body d-flex align-items-center">
+
+                                        <div class="me-3">
+                                            <div class="rounded-circle bg-primary-subtle p-3">
+                                                <i class="bi bi-shield-check text-primary fs-4"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <small class="text-muted">Administrators</small>
+                                            <h3 class="mb-0">
+                                                <?php
+                                                $admins = mysqli_query(
+                                                    $conn,
+                                                    "SELECT COUNT(*) total
+                                                FROM users
+                                                WHERE role='super_admin'"
+                                                );
+                                                echo mysqli_fetch_assoc($admins)['total'];
+                                                ?>
+                                            </h3>
+                                            <small class="text-muted">
+                                                Admin accounts
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -878,6 +1047,15 @@ $query = mysqli_query($conn, $sql);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+    </script>
 </body>
 
 </html>
