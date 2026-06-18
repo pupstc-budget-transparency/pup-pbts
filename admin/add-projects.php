@@ -248,20 +248,13 @@ if (isset($_POST['add_project'])) {
         position: sticky;
         top: 52px;
         left: 0;
-
         width: 200px;
         height: calc(100vh - 52px);
-
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
-
         background: linear-gradient(180deg, #6b0000, #3d0000);
         scrollbar-width: none;
         -ms-overflow-style: none;
-    }
-
-    .sidebar {
-        overflow-y: hidden;
     }
 
     .sidebar:hover {
@@ -270,6 +263,75 @@ if (isset($_POST['add_project'])) {
 
     .sidebar::-webkit-scrollbar {
         display: none;
+    }
+
+    @media (max-width: 1199.98px) {
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -220px;
+            height: 100vh;
+            width: 200px;
+            z-index: 1045;
+            transition: left .3s ease;
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .4);
+            z-index: 1044;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .page-header-row {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 15px;
+        }
+
+        .role-access-card {
+            flex-direction: column;
+            gap: 15px;
+            padding: 16px;
+            width: 100%;
+        }
+
+        .divider {
+            width: 80%;
+            height: 1px;
+        }
+
+        .role-value,
+        .access-value {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .header-system-name {
+            display: none;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .form-actions {
+            flex-direction: column !important;
+        }
+
+        .form-actions .btn {
+            width: 100%;
+        }
     }
 
     .form-card {
@@ -402,11 +464,20 @@ if (isset($_POST['add_project'])) {
 
 <body>
 
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <div class="container-fluid text-white shadow-sm sticky-top" style="background-color: rgb(134,9,9);">
-        <div class="container-xl py-3 d-flex justify-content-between">
-            <h6 class="mb-0">
-                PUPSTC Participatory Budget Transparency System
-            </h6>
+        <div class="container-xl py-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm text-white d-xl-none border-0 p-0 me-2" onclick="toggleSidebar()"
+                    style="font-size:22px; line-height:1;">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h6 class="mb-0 header-system-name">
+                    PUPSTC Participatory Budget Transparency System
+                </h6>
+                <h6 class="mb-0 d-sm-none">PUPSTC</h6>
+            </div>
             <span>
                 <strong><?php echo $_SESSION['fullname']; ?></strong>
             </span>
@@ -415,7 +486,7 @@ if (isset($_POST['add_project'])) {
     <div class="container-fluid px-0">
         <div class="row  g-0">
             <div class="col-12 col-xl-2">
-                <div class="sidebar d-flex flex-column gap-3 p-3 pt-5">
+                <div class="sidebar d-flex flex-column gap-3 p-3 pt-5" id="mainSidebar">
 
                     <div class="sidebar-header text-white mb-3">
                         <div class="d-flex align-items-center">
@@ -474,6 +545,10 @@ if (isset($_POST['add_project'])) {
                         <i class="bi bi-clock-history"></i>
                         <span>Audit Logs</span>
                     </a>
+                    <a href="archive.php" class="sidebar-btn">
+                        <i class="bi bi-archive-fill"></i>
+                        <span>Archive</span>
+                    </a>
 
                     <a href="announcements.php" class="sidebar-btn">
                         <i class="bi bi-megaphone-fill"></i>
@@ -484,17 +559,19 @@ if (isset($_POST['add_project'])) {
                     <div class="mt-auto">
                         <a href="../logout.php" class="btn w-100 rounded-pill text-white"
                             style="background:rgba(255,255,255,.15);">
+
                             Logout
+
                         </a>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-xl-10">
+            <div class="col-12 col-xl-10 p-3 p-xl-4">
                 <div class="row g-0">
 
                     <div class="col-12 col-xl-11 p-2 mt-3 ">
                         <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4 page-header-row">
 
                                 <div>
                                     <h2 class="fw-bold">
@@ -684,10 +761,12 @@ if (isset($_POST['add_project'])) {
                                                 </div>
 
 
-                                                <div class="d-flex justify-content-end gap-3 mt-4">
+                                                <div class="d-flex justify-content-end gap-3 mt-4 form-actions">
                                                     <a href="projects.php" class="btn btn-light border cancel-btn">
+
                                                         <i class="bi bi-x-lg"></i>
                                                         Cancel
+
                                                     </a>
 
                                                     <button type="submit" name="add_project"
@@ -736,6 +815,15 @@ if (isset($_POST['add_project'])) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+    </script>
     <?php if (!empty($message)) { ?>
 
         <script>
