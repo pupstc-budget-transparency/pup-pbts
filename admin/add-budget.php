@@ -359,6 +359,7 @@ if (isset($_POST['add_budget'])) {
         }
     }
 
+
     @media (max-width: 767.98px) {
         .role-access-card {
             flex-direction: column;
@@ -377,11 +378,13 @@ if (isset($_POST['add_budget'])) {
         }
     }
 
+
     @media (max-width: 575.98px) {
         .header-system-name {
             display: none;
         }
     }
+
 
     @media (max-width: 575.98px) {
         .form-action-buttons {
@@ -396,11 +399,12 @@ if (isset($_POST['add_budget'])) {
 
 <body>
 
-    <!-- Sidebar overlay for mobile -->
+
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <div class="container-fluid text-white shadow-sm sticky-top" style="background-color: rgb(134,9,9);">
         <div class="container-xl py-3 d-flex justify-content-between align-items-center">
+
 
             <div class="d-flex align-items-center gap-3">
                 <button class="btn btn-sm text-white d-xl-none border-0 p-0 me-2"
@@ -484,6 +488,10 @@ if (isset($_POST['add_budget'])) {
                         <i class="bi bi-clock-history"></i>
                         <span>Audit Logs</span>
                     </a>
+                    <a href="archive.php" class="sidebar-btn">
+                        <i class="bi bi-archive-fill"></i>
+                        <span>Archive</span>
+                    </a>
 
                     <a href="announcements.php" class="sidebar-btn">
                         <i class="bi bi-megaphone-fill"></i>
@@ -502,9 +510,11 @@ if (isset($_POST['add_budget'])) {
                 </div>
             </div>
 
+
             <!-- MAIN CONTENT -->
             <div class="col-12 col-xl-10">
                 <div class="row g-0">
+
 
                     <div class="col-12 p-2 mt-3">
                         <div class="flex-grow-1">
@@ -568,7 +578,8 @@ if (isset($_POST['add_budget'])) {
                         </div>
                     </div>
 
-                    <!-- FORM -->
+
+
                     <div class="col-12 col-lg-11 col-xl-11 p-2">
                         <div class="flex-grow-1">
                             <div class="card shadow border border-gray" style="border-radius: 16px;">
@@ -656,6 +667,7 @@ if (isset($_POST['add_budget'])) {
 
                                                 <div class="row">
 
+
                                                     <div class="col-12 mb-4">
                                                         <label class="form-label">
                                                             Purpose
@@ -670,6 +682,7 @@ if (isset($_POST['add_budget'])) {
                                                         </small>
                                                     </div>
 
+
                                                     <div class="col-12 mb-4">
                                                         <label class="form-label">
                                                             Beneficiaries
@@ -682,6 +695,7 @@ if (isset($_POST['add_budget'])) {
                                                             State who will benefit from this budget.
                                                         </small>
                                                     </div>
+
 
                                                     <div class="col-12 mb-4">
                                                         <label class="form-label">
@@ -700,7 +714,7 @@ if (isset($_POST['add_budget'])) {
 
                                                 </div>
 
-                                                <!-- ACTION BUTTONS -->
+
                                                 <div class="d-flex flex-column flex-sm-row justify-content-end gap-3 mt-4 form-action-buttons">
                                                     <a href="budget-management.php" class="btn btn-light border cancel-btn">
 
@@ -722,7 +736,7 @@ if (isset($_POST['add_budget'])) {
                                         </div>
                                     </form>
 
-                                    <!-- ERROR MODAL -->
+
                                     <div class="modal fade" id="errorModal" tabindex="-1">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
@@ -754,8 +768,10 @@ if (isset($_POST['add_budget'])) {
                         </div>
                     </div>
 
+
                 </div>
             </div>
+
 
         </div>
     </div>
