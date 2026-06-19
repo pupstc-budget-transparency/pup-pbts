@@ -250,13 +250,20 @@ if (isset($_POST['add_expenditure'])) {
         position: sticky;
         top: 52px;
         left: 0;
+
         width: 200px;
         height: calc(100vh - 52px);
-        overflow-y: hidden;
+
+        overflow-y: auto;
         overflow-x: hidden;
+
         background: linear-gradient(180deg, #6b0000, #3d0000);
         scrollbar-width: none;
         -ms-overflow-style: none;
+    }
+
+    .sidebar {
+        overflow-y: hidden;
     }
 
     .sidebar:hover {
@@ -265,75 +272,6 @@ if (isset($_POST['add_expenditure'])) {
 
     .sidebar::-webkit-scrollbar {
         display: none;
-    }
-
-    @media (max-width: 1199.98px) {
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: -220px;
-            height: 100vh;
-            width: 200px;
-            z-index: 1045;
-            transition: left .3s ease;
-        }
-
-        .sidebar.show {
-            left: 0;
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, .4);
-            z-index: 1044;
-        }
-
-        .sidebar-overlay.show {
-            display: block;
-        }
-    }
-
-    @media (max-width: 991.98px) {
-        .page-header-row {
-            flex-direction: column;
-            align-items: stretch !important;
-            gap: 15px;
-        }
-
-        .role-access-card {
-            flex-direction: column;
-            gap: 15px;
-            padding: 16px;
-            width: 100%;
-        }
-
-        .divider {
-            width: 80%;
-            height: 1px;
-        }
-
-        .role-value,
-        .access-value {
-            font-size: 16px;
-        }
-    }
-
-    @media (max-width: 575.98px) {
-        .header-system-name {
-            display: none;
-        }
-    }
-
-    @media (max-width: 767.98px) {
-        .form-actions {
-            flex-direction: column !important;
-        }
-
-        .form-actions .btn {
-            width: 100%;
-        }
     }
 
     .form-card {
@@ -466,20 +404,11 @@ if (isset($_POST['add_expenditure'])) {
 
 <body>
 
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
     <div class="container-fluid text-white shadow-sm sticky-top" style="background-color: rgb(134,9,9);">
-        <div class="container-xl py-3 d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm text-white d-xl-none border-0 p-0 me-2" onclick="toggleSidebar()"
-                    style="font-size:22px; line-height:1;">
-                    <i class="bi bi-list"></i>
-                </button>
-                <h6 class="mb-0 header-system-name">
-                    PUPSTC Participatory Budget Transparency System
-                </h6>
-                <h6 class="mb-0 d-sm-none">PUPSTC</h6>
-            </div>
+        <div class="container-xl py-3 d-flex justify-content-between">
+            <h6 class="mb-0">
+                PUPSTC Participatory Budget Transparency System
+            </h6>
             <span>
                 <strong><?php echo $_SESSION['fullname']; ?></strong>
             </span>
@@ -488,7 +417,7 @@ if (isset($_POST['add_expenditure'])) {
     <div class="container-fluid px-0">
         <div class="row  g-0">
             <div class="col-12 col-xl-2">
-                <div class="sidebar d-flex flex-column gap-3 p-3 pt-5" id="mainSidebar">
+                <div class="sidebar d-flex flex-column gap-3 p-3 pt-5">
 
                     <div class="sidebar-header text-white mb-3">
                         <div class="d-flex align-items-center">
@@ -547,10 +476,6 @@ if (isset($_POST['add_expenditure'])) {
                         <i class="bi bi-clock-history"></i>
                         <span>Audit Logs</span>
                     </a>
-                    <a href="archive.php" class="sidebar-btn">
-                        <i class="bi bi-archive-fill"></i>
-                        <span>Archive</span>
-                    </a>
 
                     <a href="announcements.php" class="sidebar-btn">
                         <i class="bi bi-megaphone-fill"></i>
@@ -568,12 +493,12 @@ if (isset($_POST['add_expenditure'])) {
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-xl-10 p-3 p-xl-4">
+            <div class="col-12 col-xl-10">
                 <div class="row g-0">
 
                     <div class="col-12 col-xl-11 p-2 mt-3 ">
                         <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-4 page-header-row">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
 
                                 <div>
                                     <h2 class="fw-bold">
@@ -652,7 +577,7 @@ if (isset($_POST['add_expenditure'])) {
                                                             Budget Allocation
                                                         </label>
 
-                                                        <select name="budget_id" class="form-select" required>
+                                                        <select name="budget_id" id="budgetSelect" class="form-select" required>
 
                                                             <option value="">
                                                                 -- Select Budget --
@@ -670,7 +595,8 @@ if (isset($_POST['add_expenditure'])) {
                                                             while ($budget = mysqli_fetch_assoc($budgets)) {
                                                             ?>
 
-                                                                <option value="<?= $budget['budget_id']; ?>">
+                                                                <option value="<?= $budget['budget_id']; ?>"
+                                                                    <?= (isset($_POST['budget_id']) && $_POST['budget_id'] == $budget['budget_id']) ? 'selected' : ''; ?>>
                                                                     <?= htmlspecialchars($budget['budget_title']); ?>
                                                                 </option>
 
@@ -696,6 +622,7 @@ if (isset($_POST['add_expenditure'])) {
                                                         </label>
 
                                                         <input type="text" name="category" class="form-control"
+                                                            value="<?= isset($_POST['category']) ? htmlspecialchars($_POST['category']) : ''; ?>"
                                                             required>
 
                                                     </div>
@@ -706,17 +633,24 @@ if (isset($_POST['add_expenditure'])) {
                                                             Project
                                                         </label>
 
-                                                        <select name="project_id" class="form-select" required>
+                                                        <!--
+                                                            NOTE: every active project is rendered here, each tagged
+                                                            with data-budget="<budget_id>". The script at the bottom
+                                                            filters this list on the client so only projects that
+                                                            belong to the currently selected budget are shown,
+                                                            which is what prevents the budget/project mismatch.
+                                                        -->
+                                                        <select name="project_id" id="projectSelect" class="form-select" required>
 
                                                             <option value="">
-                                                                -- Select Project --
+                                                                -- Select Budget First --
                                                             </option>
 
                                                             <?php
 
                                                             $projects = mysqli_query(
                                                                 $conn,
-                                                                "SELECT project_id, project_title
+                                                                "SELECT project_id, project_title, budget_id
                                                                  FROM projects
                                                                  WHERE record_status='active'
                                                                  ORDER BY project_title"
@@ -726,7 +660,9 @@ if (isset($_POST['add_expenditure'])) {
 
                                                             ?>
 
-                                                                <option value="<?= $project['project_id']; ?>">
+                                                                <option value="<?= $project['project_id']; ?>"
+                                                                    data-budget="<?= $project['budget_id']; ?>"
+                                                                    <?= (isset($_POST['project_id']) && $_POST['project_id'] == $project['project_id']) ? 'selected' : ''; ?>>
                                                                     <?= htmlspecialchars($project['project_title']); ?>
                                                                 </option>
 
@@ -753,7 +689,9 @@ if (isset($_POST['add_expenditure'])) {
                                                         </label>
 
                                                         <input type="number" step="0.01" name="amount"
-                                                            class="form-control" required>
+                                                            class="form-control"
+                                                            value="<?= isset($_POST['amount']) ? htmlspecialchars($_POST['amount']) : ''; ?>"
+                                                            required>
 
                                                     </div>
 
@@ -765,9 +703,18 @@ if (isset($_POST['add_expenditure'])) {
 
                                                         <select name="payment_method" class="form-select" required>
 
-                                                            <option value="Cash">Cash</option>
-                                                            <option value="Check">Check</option>
-                                                            <option value="Bank Transfer">Bank Transfer</option>
+                                                            <option value="Cash"
+                                                                <?= (isset($_POST['payment_method']) && $_POST['payment_method'] == 'Cash') ? 'selected' : ''; ?>>
+                                                                Cash
+                                                            </option>
+                                                            <option value="Check"
+                                                                <?= (isset($_POST['payment_method']) && $_POST['payment_method'] == 'Check') ? 'selected' : ''; ?>>
+                                                                Check
+                                                            </option>
+                                                            <option value="Bank Transfer"
+                                                                <?= (isset($_POST['payment_method']) && $_POST['payment_method'] == 'Bank Transfer') ? 'selected' : ''; ?>>
+                                                                Bank Transfer
+                                                            </option>
 
                                                         </select>
 
@@ -791,7 +738,7 @@ if (isset($_POST['add_expenditure'])) {
                                                         </label>
 
                                                         <textarea name="description" class="form-control" rows="3"
-                                                            required></textarea>
+                                                            required><?= isset($_POST['description']) ? htmlspecialchars($_POST['description']) : ''; ?></textarea>
 
                                                     </div>
 
@@ -802,6 +749,7 @@ if (isset($_POST['add_expenditure'])) {
                                                         </label>
 
                                                         <input type="date" name="expenditure_date" class="form-control"
+                                                            value="<?= isset($_POST['expenditure_date']) ? htmlspecialchars($_POST['expenditure_date']) : ''; ?>"
                                                             required>
 
                                                     </div>
@@ -814,8 +762,14 @@ if (isset($_POST['add_expenditure'])) {
 
                                                         <select name="status" class="form-select" required>
 
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="Paid">Paid</option>
+                                                            <option value="Pending"
+                                                                <?= (isset($_POST['status']) && $_POST['status'] == 'Pending') ? 'selected' : ''; ?>>
+                                                                Pending
+                                                            </option>
+                                                            <option value="Paid"
+                                                                <?= (isset($_POST['status']) && $_POST['status'] == 'Paid') ? 'selected' : ''; ?>>
+                                                                Paid
+                                                            </option>
 
                                                         </select>
 
@@ -823,7 +777,7 @@ if (isset($_POST['add_expenditure'])) {
                                                 </div>
 
 
-                                                <div class="d-flex justify-content-end gap-3 mt-4 form-actions">
+                                                <div class="d-flex justify-content-end gap-3 mt-4">
 
                                                     <a href="expenditures.php"
                                                         class="btn btn-light border cancel-btn">
@@ -882,13 +836,56 @@ if (isset($_POST['add_expenditure'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('mainSidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('show');
-            overlay.classList.toggle('show');
-        }
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const budgetSelect = document.getElementById("budgetSelect");
+            const projectSelect = document.getElementById("projectSelect");
+
+
+            const allProjectOptions = Array.from(projectSelect.options)
+                .filter(function(opt) {
+                    return opt.value !== "";
+                });
+
+
+            const initiallySelectedProject = projectSelect.value;
+
+            function filterProjects(preserveSelection) {
+
+                const selectedBudget = budgetSelect.value;
+
+                projectSelect.innerHTML = "";
+
+                const placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = selectedBudget ?
+                    "-- Select Project --" :
+                    "-- Select Budget First --";
+                projectSelect.appendChild(placeholder);
+
+                if (!selectedBudget) {
+                    return;
+                }
+
+                allProjectOptions.forEach(function(opt) {
+                    if (opt.dataset.budget === selectedBudget) {
+                        const clone = opt.cloneNode(true);
+                        if (preserveSelection && clone.value === initiallySelectedProject) {
+                            clone.selected = true;
+                        }
+                        projectSelect.appendChild(clone);
+                    }
+                });
+            }
+
+            budgetSelect.addEventListener("change", function() {
+                filterProjects(false);
+            });
+
+            filterProjects(true);
+        });
     </script>
+
     <?php if (!empty($message)) { ?>
 
         <script>
