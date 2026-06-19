@@ -3,21 +3,19 @@
 require '../includes/auth.php';
 require '../includes/config.php';
 
-
 $role = $_SESSION['role'];
 
 $message = "";
 
 if (isset($_POST['add_project'])) {
 
-    $project_title = trim($_POST['project_title']);
-    $project_description = trim($_POST['project_description']);
-    $budget_id = $_POST['budget_id'];
-    $allocated_budget = $_POST['allocated_budget'];
-    $start_date = $_POST['start_date'];
-    $end_date = $_POST['end_date'];
-    $record_status = $_POST['record_status'];
-    $project_code = 'PRJ-' . date('YmdHis');
+    $project_title       = trim($_POST['project_title'] ?? '');
+    $project_description = trim($_POST['project_description'] ?? '');
+    $budget_id            = $_POST['budget_id'] ?? '';
+    $allocated_budget     = $_POST['allocated_budget'] ?? '';
+    $start_date           = $_POST['start_date'] ?? '';
+    $end_date             = $_POST['end_date'] ?? '';
+    $status               = $_POST['status'] ?? '';
 
     if (empty($project_title)) {
 
@@ -43,124 +41,115 @@ if (isset($_POST['add_project'])) {
     } elseif ($start_date > $end_date) {
 
         $message = "End date must be later than start date.";
-    } elseif (empty($record_status)) {
+    } elseif (empty($status)) {
 
         $message = "Please select project status.";
     } else {
 
-        $budget_query = mysqli_query(
+        // Look up the total amount for the selected budget allocation
+        $budget_stmt = mysqli_prepare(
             $conn,
-            "SELECT total_amount
-             FROM budgets
-             WHERE budget_id = $budget_id"
+            "SELECT total_amount FROM budgets WHERE budget_id = ?"
         );
+        mysqli_stmt_bind_param($budget_stmt, "i", $budget_id);
+        mysqli_stmt_execute($budget_stmt);
+        $budget_result = mysqli_stmt_get_result($budget_stmt);
+        $budget = mysqli_fetch_assoc($budget_result);
 
-        $budget = mysqli_fetch_assoc($budget_query);
+        if (!$budget) {
 
-        $project_query = mysqli_query(
-            $conn,
-            "SELECT IFNULL(SUM(allocated_budget),0) AS used_budget
-             FROM projects
-             WHERE budget_id = $budget_id
-             AND record_status='active'"
-        );
+            $message = "Selected budget allocation does not exist.";
+        } else {
 
-        $used = mysqli_fetch_assoc($project_query);
+            // Sum what has already been allocated to active projects under this budget
+            $used_stmt = mysqli_prepare(
+                $conn,
+                "SELECT IFNULL(SUM(allocated_budget), 0) AS used_budget
+                 FROM projects
+                 WHERE budget_id = ?
+                 AND record_status = 'active'"
+            );
+            mysqli_stmt_bind_param($used_stmt, "i", $budget_id);
+            mysqli_stmt_execute($used_stmt);
+            $used_result = mysqli_stmt_get_result($used_stmt);
+            $used = mysqli_fetch_assoc($used_result);
 
-        $remaining =
-            $budget['total_amount']
-            - $used['used_budget'];
+            $remaining = $budget['total_amount'] - $used['used_budget'];
 
-        if ($allocated_budget > $remaining) {
+            if ($allocated_budget > $remaining) {
 
-            $message =
-                "Insufficient budget. Remaining: ₱"
-                . number_format($remaining, 2);
+                $message = "Insufficient budget. Remaining: \xe2\x82\xb1" . number_format($remaining, 2);
+            }
         }
     }
 
     if (empty($message)) {
 
-        $project_check = mysqli_query(
+        $project_code     = 'PRJ-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+        $allocated_amount = (float) $allocated_budget;
+        $created_by       = $_SESSION['user_id'];
+
+        $stmt = mysqli_prepare(
             $conn,
-            "SELECT *
-             FROM projects
-             WHERE project_id = $project_id
-             AND budget_id = $budget_id"
+            "INSERT INTO projects
+            (
+                project_code,
+                project_title,
+                project_description,
+                budget_id,
+                allocated_budget,
+                status,
+                start_date,
+                end_date,
+                created_by,
+                record_status
+            )
+            VALUES
+            (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active'
+            )"
         );
 
-        if (mysqli_num_rows($project_check) == 0) {
+        mysqli_stmt_bind_param(
+            $stmt,
+            "sssidssii",
+            $project_code,
+            $project_title,
+            $project_description,
+            $budget_id,
+            $allocated_amount,
+            $status,
+            $start_date,
+            $end_date,
+            $created_by
+        );
 
-            $message = "Selected project does not belong to the selected budget.";
-        }
+        if (mysqli_stmt_execute($stmt)) {
 
-        if (empty($message)) {
+            $new_id = mysqli_insert_id($conn);
 
-            $stmt = mysqli_prepare(
+            $audit_stmt = mysqli_prepare(
                 $conn,
-                "INSERT INTO expenditures
+                "INSERT INTO audit_logs
                 (
-                    budget_id,
-                    reference_no,
-                    category,
-                    project_id,
-                    description,
-                    amount,
-                    payment_method,
-                    expenditure_date,
-                    status,
-                    created_by,
-                    record_status
+                    user_id,
+                    action,
+                    table_name,
+                    record_id
                 )
                 VALUES
                 (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active'
+                    ?, 'Added Project', 'projects', ?
                 )"
             );
+            mysqli_stmt_bind_param($audit_stmt, "ii", $created_by, $new_id);
+            mysqli_stmt_execute($audit_stmt);
 
-            mysqli_stmt_bind_param(
-                $stmt,
-                "issisdsssi",
-                $budget_id,
-                $reference_no,
-                $category,
-                $project_id,
-                $description,
-                $amount,
-                $payment_method,
-                $expenditure_date,
-                $status,
-                $_SESSION['user_id']
-            );
+            header("Location: projects.php");
+            exit();
+        } else {
 
-            if (mysqli_stmt_execute($stmt)) {
-
-                $new_id = mysqli_insert_id($conn);
-
-                mysqli_query(
-                    $conn,
-                    "INSERT INTO audit_logs
-                    (
-                        user_id,
-                        action,
-                        table_name,
-                        record_id
-                    )
-                    VALUES
-                    (
-                        {$_SESSION['user_id']},
-                        'Added Expenditure',
-                        'expenditures',
-                        $new_id
-                    )"
-                );
-
-                header("Location: expenditures.php");
-                exit();
-            } else {
-
-                $message = "Failed to add expenditure.";
-            }
+            $message = "Failed to add project.";
         }
     }
 }
@@ -479,7 +468,7 @@ if (isset($_POST['add_project'])) {
                 <h6 class="mb-0 d-sm-none">PUPSTC</h6>
             </div>
             <span>
-                <strong><?php echo $_SESSION['fullname']; ?></strong>
+                <strong><?php echo htmlspecialchars($_SESSION['fullname']); ?></strong>
             </span>
         </div>
     </div>
@@ -575,9 +564,9 @@ if (isset($_POST['add_project'])) {
 
                                 <div>
                                     <h2 class="fw-bold">
-                                        Add New Budget Allocation
+                                        Add New Project
                                     </h2>
-                                    <h5>budget Management</h5>
+                                    <h5>Project Management</h5>
                                 </div>
 
                                 <div class="role-access-card">
@@ -658,35 +647,23 @@ if (isset($_POST['add_project'])) {
                                                     <div class="col-md-6 mb-4">
 
                                                         <label class="form-label">
-                                                            Project
+                                                            Project Title
                                                         </label>
 
-                                                        <select name="project_id" class="form-select" required>
+                                                        <input type="text" name="project_title" class="form-control"
+                                                            value="<?= isset($_POST['project_title']) ? htmlspecialchars($_POST['project_title']) : ''; ?>"
+                                                            required>
 
-                                                            <option value="">
-                                                                -- Select Project --
-                                                            </option>
+                                                    </div>
 
-                                                            <?php
+                                                    <div class="col-md-12 mb-4">
 
-                                                            $projects = mysqli_query(
-                                                                $conn,
-                                                                "SELECT project_id, project_title
-                                                                 FROM projects
-                                                                 WHERE record_status='active'
-                                                                 ORDER BY project_title"
-                                                            );
+                                                        <label class="form-label">
+                                                            Project Description
+                                                        </label>
 
-                                                            while ($project = mysqli_fetch_assoc($projects)) {
-
-                                                            ?>
-
-                                                                <option value="<?= $project['project_id']; ?>">
-                                                                    <?= htmlspecialchars($project['project_title']); ?>
-                                                                </option>
-
-                                                            <?php } ?>
-                                                        </select>
+                                                        <textarea name="project_description" class="form-control" rows="3"
+                                                            required><?= isset($_POST['project_description']) ? htmlspecialchars($_POST['project_description']) : ''; ?></textarea>
 
                                                     </div>
                                                 </div>
@@ -704,11 +681,52 @@ if (isset($_POST['add_project'])) {
                                                     <div class="col-md-6 mb-4">
 
                                                         <label class="form-label">
-                                                            Amount
+                                                            Budget Source
                                                         </label>
 
-                                                        <input type="number" step="0.01" min="0" name="allocated_budget"
-                                                            class="form-control" required>
+                                                        <select name="budget_id" class="form-select" required>
+
+                                                            <option value="">
+                                                                -- Select Budget Allocation --
+                                                            </option>
+
+                                                            <?php
+
+                                                            // NOTE: adjust column names below if your `budgets`
+                                                            // table has a descriptive field (e.g. title, fiscal_year)
+                                                            $budgets = mysqli_query(
+                                                                $conn,
+                                                                "SELECT budget_id, total_amount
+                                                                 FROM budgets
+                                                                 WHERE record_status = 'active'
+                                                                 ORDER BY budget_id DESC"
+                                                            );
+
+                                                            while ($budget_row = mysqli_fetch_assoc($budgets)) {
+
+                                                            ?>
+
+                                                                <option value="<?= $budget_row['budget_id']; ?>"
+                                                                    <?= (isset($_POST['budget_id']) && $_POST['budget_id'] == $budget_row['budget_id']) ? 'selected' : ''; ?>>
+                                                                    Budget #<?= $budget_row['budget_id']; ?>
+                                                                    &mdash; &#8369;<?= number_format($budget_row['total_amount'], 2); ?>
+                                                                </option>
+
+                                                            <?php } ?>
+                                                        </select>
+
+                                                    </div>
+
+                                                    <div class="col-md-6 mb-4">
+
+                                                        <label class="form-label">
+                                                            Allocated Budget
+                                                        </label>
+
+                                                        <input type="number" step="0.01" min="0.01" name="allocated_budget"
+                                                            class="form-control"
+                                                            value="<?= isset($_POST['allocated_budget']) ? htmlspecialchars($_POST['allocated_budget']) : ''; ?>"
+                                                            required>
 
                                                     </div>
                                                 </div>
@@ -730,6 +748,7 @@ if (isset($_POST['add_project'])) {
                                                         </label>
 
                                                         <input type="date" name="start_date" class="form-control"
+                                                            value="<?= isset($_POST['start_date']) ? htmlspecialchars($_POST['start_date']) : ''; ?>"
                                                             required>
                                                     </div>
 
@@ -739,6 +758,7 @@ if (isset($_POST['add_project'])) {
                                                         </label>
 
                                                         <input type="date" name="end_date" class="form-control"
+                                                            value="<?= isset($_POST['end_date']) ? htmlspecialchars($_POST['end_date']) : ''; ?>"
                                                             required>
                                                     </div>
 
@@ -750,10 +770,14 @@ if (isset($_POST['add_project'])) {
 
                                                         <select name="status" class="form-select" required>
 
-                                                            <option value="Planning">Planning</option>
-                                                            <option value="Ongoing">Ongoing</option>
-                                                            <option value="Completed">Completed</option>
-                                                            <option value="Cancelled">Cancelled</option>
+                                                            <?php
+                                                            $status_options = ['Planning', 'Ongoing', 'Completed', 'Cancelled'];
+                                                            $selected_status = $_POST['status'] ?? 'Planning';
+                                                            foreach ($status_options as $opt) {
+                                                                $sel = ($selected_status === $opt) ? 'selected' : '';
+                                                                echo "<option value=\"$opt\" $sel>$opt</option>";
+                                                            }
+                                                            ?>
 
                                                         </select>
 
@@ -793,7 +817,7 @@ if (isset($_POST['add_project'])) {
                                                 </div>
 
                                                 <div class="modal-body">
-                                                    <?php echo $message; ?>
+                                                    <?php echo htmlspecialchars($message); ?>
                                                 </div>
 
                                                 <div class="modal-footer">
